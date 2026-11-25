@@ -63,9 +63,8 @@ def lyapunov_exponent(
 ) -> Optional[float]:
     """Estimate the largest Lyapunov exponent using nearest-neighbor divergence.
 
-    A positive value indicates sensitive dependence on initial conditions
-    (chaos); a value near zero indicates a random walk; a negative value
-    indicates convergence to a fixed point or limit cycle.
+    A positive estimate means nearby paths separated on this sample. Noise
+    can also produce positive estimates, so this is not a test for chaos.
 
     Parameters
     ----------
@@ -147,9 +146,9 @@ def lyapunov_exponent(
 def hurst_exponent(series: np.ndarray, min_lag: int = 10, max_lag: int | None = None) -> Optional[float]:
     """Estimate the Hurst exponent via classical rescaled-range (R/S) analysis.
 
-    H < 0.5 : mean-reverting
-    H ≈ 0.5 : random walk / Brownian
-    H > 0.5 : trending / persistent
+    H < 0.5 : anti-persistence
+    H ≈ 0.5 : consistent with uncorrelated increments when applied to returns
+    H > 0.5 : persistence
     """
     x = _require(series, 2 * min_lag + 1)
     if x is None:
@@ -328,22 +327,17 @@ def sample_entropy(
 def classify_regime(
     lyapunov: Optional[float],
     hurst: Optional[float],
-    correlation_dim: Optional[float],
-    entropy: Optional[float],
 ) -> str:
-    """Classify the market regime from chaos metrics.
-
-    Priority:
-        1. Chaotic     : Lyapunov > 0 (strong sensitive dependence)
-        2. Trending    : H > 0.55
-        3. MeanRev     : H < 0.45
-        4. Random      : otherwise
-    """
-    if lyapunov is not None and np.isfinite(lyapunov) and lyapunov > 0.05:
-        return "chaotic"
-    if hurst is not None and np.isfinite(hurst):
+    """Label estimated behavior using illustrative, uncalibrated thresholds."""
+    has_lyapunov = lyapunov is not None and np.isfinite(lyapunov)
+    has_hurst = hurst is not None and np.isfinite(hurst)
+    if not has_lyapunov and not has_hurst:
+        return "warming_up"
+    if has_lyapunov and lyapunov > 0.05:
+        return "high_divergence"
+    if has_hurst:
         if hurst > 0.55:
             return "trending"
         if hurst < 0.45:
             return "mean_reverting"
-    return "random"
+    return "no_signal"
