@@ -5,6 +5,9 @@ volatility, and chaos metrics on **simulated market data**. Watch a seeded price
 simulation, then compare the phase-space plot of a chaotic logistic map with
 independent noise. No account, API key, or market data connection is needed.
 
+**[Try Chaos vs. Noise in your browser](https://0xmrpinheiro.github.io/market-chaos-phase-space-dashboard/)**
+— the lightweight demo needs no installation. The full Streamlit dashboard runs locally below.
+
 ![Streamlit dashboard showing the logistic map's curved phase-space plot next to the scattered plot for independent noise](docs/dashboard.png)
 
 ## Quick start
