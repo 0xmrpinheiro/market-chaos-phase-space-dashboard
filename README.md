@@ -1,81 +1,78 @@
-# 📉 Real-Time Market Chaos & Phase-Space Dashboard
+# Market Chaos & Phase-Space Dashboard
 
-A live, offline-first dashboard that streams simulated market ticks and computes
-chaos-theory metrics in a rolling window: **Lyapunov exponent**, **Hurst exponent**,
-**correlation dimension**, and **sample entropy**. It visualizes price action,
-phase-space trajectories (price vs. velocity), volatility clustering, and regime
-history — no API keys or network access required.
+An interactive Python and Streamlit dashboard for exploring phase space,
+volatility, and chaos metrics on **simulated market data**. Watch a seeded price
+simulation, then compare the phase-space plot of a chaotic logistic map with
+independent noise. No account, API key, or market data connection is needed.
 
-## Features
-
-| Panel | What it shows |
-|-------|---------------|
-| **Live price** | Streaming price series with per-tick return delta |
-| **Phase space** | Price vs. velocity scatter — reveals attractors / strange-attractor structure |
-| **Returns vs. volatility** | Volatility clustering (large returns follow large returns) |
-| **Chaos metrics** | Lyapunov, Hurst, correlation dimension, sample entropy as gauges |
-| **Regime** | Live classification: Trending / Mean-Reverting / Chaotic / Random |
-| **Regime history** | Mini time-line of regime transitions |
-
-## Chaos metrics
-
-| Metric | Interpretation |
-|--------|----------------|
-| **Lyapunov exponent** | Rate of divergence of nearby trajectories. **> 0 = chaotic** (sensitive dependence). ≈ 0 = random walk; < 0 = convergent/stable. |
-| **Hurst exponent** | **> 0.55 trending**, **< 0.45 mean-reverting**, ≈ 0.5 random walk. |
-| **Correlation dimension** | Dimensionality of the attractor; low non-integer values suggest deterministic chaos. |
-| **Sample entropy** | Signal irregularity — higher = more complex/unpredictable. |
+![Streamlit dashboard showing the logistic map's curved phase-space plot next to the scattered plot for independent noise](docs/dashboard.png)
 
 ## Quick start
 
+Use Python 3.11 or newer. Installing packages requires an internet connection;
+the simulation runs locally after that.
+
 ```bash
-# 1. Create a virtual environment (optional but recommended)
+git clone https://github.com/0xmrpinheiro/market-chaos-phase-space-dashboard.git
+cd market-chaos-phase-space-dashboard
+```
+
+**macOS / Linux**
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m streamlit run app.py
+```
+
+**Windows PowerShell**
+
+```powershell
 python -m venv .venv
-.venv\Scripts\Activate.ps1   # Windows
-
-# 2. Install dependencies
-pip install -r requirements.txt
-
-# 3. Run the dashboard
-streamlit run app.py
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m streamlit run app.py
 ```
 
-Then open the URL Streamlit prints (usually `http://localhost:8501`).
+Open `http://localhost:8501`. Both tabs have charts immediately; there is no
+need to wait for the price buffer to fill.
 
-## Controls (sidebar)
+## Try it
 
-- **Symbol** — label shown in the header (cosmetic).
-- **Rolling window** — number of ticks kept in the buffer (default 2000).
-- **Refresh rate** — how often a new tick is emitted (ms).
-- **Live feed** — pause/resume the simulation.
-- **Drift** — per-tick expected return of the simulated price path.
-- **Volatility regime** — low / medium / high base volatility.
-- **Noise level** — extra observation noise added to each tick.
-- **Reset buffer** — clear the history and restart at 100.
+1. **Chaos vs. noise:** The logistic map (`x[t+1] = 4x[t](1−x[t])`) traces a
+   curve when each value is plotted against the next. Independent uniform noise
+   has no equivalent update rule, so its points spread across the same axes.
+2. **Market simulation:** Adjust drift, volatility, or noise, and see how new
+   ticks change the price chart and the consecutive-price scatter plot. The chart
+   window controls visible history; the metrics use up to the latest 256 ticks.
+3. **Play simulation** pauses or resumes new ticks. **Restart replay** reseeds
+   the generator and redraws the initial sample with the selected settings.
+   The symbol is a label, not a live ticker lookup.
 
-## Swapping in real market data
+## What the metrics mean here
 
-The simulator lives in `data_feed.py` (`MarketFeed.next_tick` returns a `Tick`).
-Replace that class with a WebSocket/REST client that yields the same `Tick`
-(timestamp, price, return, velocity, volatility) — the UI and chaos metrics
-require no changes.
+| Metric | What it estimates |
+| --- | --- |
+| Lyapunov exponent | How quickly nearby paths in the price embedding separate. A positive estimate on noisy data is not proof of deterministic chaos. |
+| Hurst exponent | Persistence or anti-persistence in simulated returns, estimated with rescaled range analysis. |
+| Correlation dimension | How the fraction of nearby point pairs scales with distance in the price embedding. |
+| Sample entropy | How often similar return patterns stay similar after adding one more observation. |
 
-## Project structure
+The displayed labels use illustrative thresholds, not a validated market-regime
+classifier. The dashboard does not predict prices or test real markets for chaos.
 
+## Development
+
+From the repository root, with the virtual environment activated:
+
+```bash
+python -m unittest discover -s tests -v
 ```
-app.py              # Streamlit UI + orchestration
-data_feed.py        # Simulated real-time market data generator
-chaos_metrics.py    # Chaos-theory calculations
-utils.py            # Session-state helpers, formatting, constants
-requirements.txt    # Python dependencies
-README.md           # This file
-```
 
-## Requirements
-
-- Python 3.10+
-- streamlit, plotly, pandas, numpy, streamlit-autorefresh
+- [`app.py`](app.py) — Streamlit views and replay controls
+- [`data_feed.py`](data_feed.py) — seeded market simulator and reference signals
+- [`chaos_metrics.py`](chaos_metrics.py) — metric estimators and heuristic labels
+- [`tests/`](tests/) — replay and app smoke tests
 
 ## License
 
-MIT
+[MIT](LICENSE)

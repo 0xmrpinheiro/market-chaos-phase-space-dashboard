@@ -1,9 +1,9 @@
-"""Utility helpers for session state, formatting, and shared constants."""
+"""Rolling market buffer, formatting helpers, and shared constants."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Deque, Dict, Optional
+from typing import Deque, Optional
 
 import numpy as np
 import pandas as pd
@@ -14,22 +14,18 @@ from collections import deque
 # Constants
 # ---------------------------------------------------------------------------
 
-DEFAULT_WINDOW = 2000
-DEFAULT_REFRESH_MS = 1000
+DEFAULT_WINDOW = 500
+MAX_WINDOW = 2000
+METRIC_WINDOW = 256
+INITIAL_SAMPLE_TICKS = 120
 DEFAULT_SYMBOL = "SPX"
 
 REGIME_NAMES = {
-    "trending": "Trending",
-    "mean_reverting": "Mean-Reverting",
-    "chaotic": "Chaotic",
-    "random": "Random",
-}
-
-REGIME_COLORS = {
-    "trending": "#22c55e",        # green
-    "mean_reverting": "#3b82f6",  # blue
-    "chaotic": "#ef4444",         # red
-    "random": "#f59e0b",          # amber
+    "warming_up": "Not enough data",
+    "no_signal": "No strong signal",
+    "mean_reverting": "Anti-persistent returns",
+    "trending": "Persistent returns",
+    "high_divergence": "High estimated divergence",
 }
 
 
@@ -53,7 +49,12 @@ class MarketBuffer:
     ticks: Deque[Tick] = field(default_factory=deque)
 
     def __post_init__(self) -> None:
-        self.ticks = deque(maxlen=self.window)
+        self.ticks = deque(self.ticks, maxlen=self.window)
+
+    def resize(self, window: int) -> None:
+        if window != self.window:
+            self.ticks = deque(self.ticks, maxlen=window)
+            self.window = window
 
     def append(self, tick: Tick) -> None:
         self.ticks.append(tick)
@@ -84,40 +85,8 @@ class MarketBuffer:
 
 
 # ---------------------------------------------------------------------------
-# Session-state helpers
+# Formatting helpers
 # ---------------------------------------------------------------------------
-
-
-def ensure_state(
-    symbol: str = DEFAULT_SYMBOL,
-    window: int = DEFAULT_WINDOW,
-    refresh_ms: int = DEFAULT_REFRESH_MS,
-    running: bool = True,
-) -> None:
-    """Initialise Streamlit session-state keys if absent."""
-    import streamlit as st  # imported here so utils stays importable in tests
-
-    defaults: Dict[str, object] = {
-        "market_buffer": MarketBuffer(window=window),
-        "symbol": symbol,
-        "window": window,
-        "refresh_ms": refresh_ms,
-        "running": running,
-        "drift": 0.0002,
-        "vol_regime": "medium",  # low | medium | high
-        "noise_level": 0.02,
-        "last_price": 100.0,
-        "regime_history:": deque(maxlen=200),
-    }
-    for key, value in defaults.items():
-        if key not in st.session_state:
-            st.session_state[key] = value
-
-
-def get_buffer() -> MarketBuffer:
-    import streamlit as st
-
-    return st.session_state["market_buffer"]
 
 
 def format_price(value: float) -> str:
@@ -132,13 +101,3 @@ def format_metric(value: Optional[float], ndigits: int = 3) -> str:
     if value is None or not np.isfinite(value):
         return "–"
     return f"{value:.{ndigits}f}"
-
-
-def regime_badge_html(regime_key: str) -> str:
-    name = REGIME_NAMES.get(regime_key, regime_key)
-    color = REGIME_COLORS.get(regime_key, "#64748b")
-    return (
-        f"<span style='display:inline-block;padding:4px 10px;border-radius:12px;"
-        f"background:{color};color:#fff;font-weight:700;font-size:0.9rem;' "
-        f"title='Current market regime'>{name}</span>"
-    )

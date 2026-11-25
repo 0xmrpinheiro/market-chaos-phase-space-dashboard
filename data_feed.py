@@ -1,16 +1,14 @@
 """Simulated real-time market data generator.
 
-Produces a stream of ticks using geometric Brownian motion with regime
-switching and volatility clustering.  Entirely offline -- no API keys or
+Produces a stream of ticks using stochastic log returns with configurable
+volatility and clustering. Entirely offline -- no API keys or
 network access required.  Swap this module for a real WebSocket/REST feed
 without changing the UI layer.
 """
 
 from __future__ import annotations
 
-import random
 from dataclasses import dataclass
-from typing import Deque
 
 import numpy as np
 import pandas as pd
@@ -58,7 +56,7 @@ class MarketFeed:
         # Regime-dependent base volatility.
         base_vol = 0.01 * self.VOL_MULTIPLIERS.get(self.config.vol_regime, 1.0)
 
-        # GARCH-like clustering: vol reacts to squared recent return.
+        # GARCH-like clustering: vol reacts to the size of the last return.
         shock = self.rng.standard_normal()
         innovation = self.cluster_vol * shock
         ret = self.config.drift + innovation + self.config.noise_level * self.rng.standard_normal()
@@ -71,8 +69,7 @@ class MarketFeed:
         self.price = float(self.price * np.exp(ret))
         self.last_return = ret
 
-        # Rolling volatility estimate from recent returns is computed upstream;
-        # here we store the instantaneous cluster vol.
+        # Store the instantaneous cluster volatility.
         return Tick(
             timestamp=timestamp,
             price=self.price,
@@ -80,3 +77,14 @@ class MarketFeed:
             velocity=ret,  # first difference of price proxy
             volatility=self.cluster_vol,
         )
+
+
+def chaos_noise_reference(size: int = 300, seed: int = 42) -> tuple[np.ndarray, np.ndarray]:
+    """Return a logistic map at r=4 and independent uniform noise on [0, 1]."""
+    chaotic = np.empty(size + 100)
+    chaotic[0] = 0.231
+    for i in range(1, len(chaotic)):
+        x = chaotic[i - 1]
+        chaotic[i] = 4 * x * (1 - x)
+    noise = np.random.default_rng(seed).uniform(size=size)
+    return chaotic[100:], noise
