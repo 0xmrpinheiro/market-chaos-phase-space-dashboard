@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chaos vs. Noise | Market Chaos &amp; Phase-Space Dashboard</title>
+  <meta name="description" content="Compare a chaotic logistic map with uniform noise in your browser. Change the control parameter and see how successive values reveal structure.">
+  <meta property="og:title" content="Chaos vs. Noise: a phase-space demo">
+  <meta property="og:description" content="One curve. One cloud. Change the controls and see how a deterministic update rule leaves a visible trace.">
+  <meta property="og:url" content="https://0xmrpinheiro.github.io/market-chaos-phase-space-dashboard/">
+  <meta property="og:image" content="https://0xmrpinheiro.github.io/market-chaos-phase-space-dashboard/dashboard.png">
+  <meta property="og:image:alt" content="The Streamlit dashboard plots a curved logistic map beside a diffuse cloud of noise points.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://0xmrpinheiro.github.io/market-chaos-phase-space-dashboard/">
+  <link rel="stylesheet" href="demo.css">
+  <script type="module" src="demo.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">Market Chaos &amp; Phase-Space Dashboard</p>
+      <h1>Chaos vs. noise</h1>
+      <p class="lead">Put each value on the horizontal axis and the next value on the vertical axis.
+        The chaotic logistic map traces a curve. The noise fills a cloud.</p>
+      <a class="repo-link" href="https://github.com/0xmrpinheiro/market-chaos-phase-space-dashboard#quick-start">Run the full Python dashboard on GitHub</a>
+    </header>
+    <section class="controls" aria-label="Demo controls">
+      <label for="parameter">Logistic parameter <var>r</var> <output id="parameter-value" for="parameter">4.00</output>
+        <input id="parameter" type="range" min="2.80" max="4" step="0.01" value="4">
+      </label>
+      <label for="observations">Observations <output id="observation-value" for="observations">300</output>
+        <input id="observations" type="range" min="50" max="600" step="50" value="300">
+      </label>
+      <div class="buttons">
+        <button id="cycle-example" type="button">Try a 2-cycle</button>
+        <button id="chaos-example" type="button">Reset to chaos</button>
+        <button id="new-noise" type="button">New noise sample</button>
+      </div>
+    </section>
+    <noscript><p>JavaScript is required for the controls. The screenshot below shows the default comparison.</p></noscript>
+    <section class="plots" aria-label="Successive-value plots">
+      <article class="card logistic">
+        <h2>Logistic map</h2>
+        <p><var>x</var><sub>t+1</sub> = <var>r</var><var>x</var><sub>t</sub>(1 − <var>x</var><sub>t</sub>)</p>
+        <svg id="logistic-plot" viewBox="0 0 460 315" role="img" aria-label="Logistic-map successive values"></svg>
+      </article>
+      <article class="card noise">
+        <h2>Uniform noise</h2>
+        <p>Seed: <span id="seed">42</span> · No logistic-map update rule</p>
+        <svg id="noise-plot" viewBox="0 0 460 315" role="img" aria-label="Uniform-noise successive values"></svg>
+      </article>
+    </section>
+    <section class="explanation">
+      <h2>What to look for</h2>
+      <p>At <var>r</var> = 3.20 the map alternates between two states after a short warm-up. At
+        <var>r</var> = 4.00 it behaves chaotically, but the same update rule still ties each point
+        to the next. Both plots use the same 0–1 scale. This is a synthetic example, not a test
+        for chaos in financial markets.</p>
+      <p>This browser demo illustrates the comparison tab. The separate Python dashboard also
+        includes a simulated market feed, volatility controls, and experimental rolling metrics.</p>
+      <figure>
+        <a href="dashboard.png"><img src="dashboard.png" width="1440" height="755" loading="lazy" alt="Full Streamlit app with the logistic map on the left and uniform noise on the right."></a>
+        <figcaption>Screenshot from the full Streamlit dashboard.</figcaption>
+      </figure>
+    </section>
+  </main>
+</body>
+</html>

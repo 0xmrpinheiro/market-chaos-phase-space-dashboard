@@ -9,6 +9,15 @@ permissions:
   contents: read
 
 jobs:
+  browser-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - run: node --test tests/browser_demo.test.mjs
+
   smoke-test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
